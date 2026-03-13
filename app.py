@@ -35,6 +35,11 @@ def get_note(note_id):
 
     return jsonify({"error": "Note not found"}), 404
 
+@app.route("/health")
+def health():
+    return jsonify({
+        "status": "ok"
+    })
 
 if __name__ == "__main__":
     app.run(debug=True)
