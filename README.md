@@ -35,7 +35,18 @@ Flask를 사용하여 간단한 REST API 형태의 노트 조회 서비스를 �
 
 ---
 
-## 3. 프로젝트 구조
+## 3. API 엔드포인트
+
+| Endpoint       | 설명       |
+|----------------|----------|
+| `/` 또는 `/home` | 서비스 소개   |
+| `/notes`       | 노트 목록 조회 |
+| `/notes/<id>`  | 특정 노트 조회 |
+| `/health`      | 서버 상태 확인 |
+
+---
+
+## 4. 프로젝트 구조
 ```
 flask-blog/
 ├── app.py
@@ -53,15 +64,15 @@ flask-blog/
 
 ---
 
-## 4. 실행 방법
+## 5. 실행 방법
 
-### 4.1 패키지 설치
+### 5.1 패키지 설치
 
 ```bash
 pip install -r requirements.txt.txt
 ```
 
-### 4.2 서버 실행
+### 5.2 서버 실행
 
 ```bash
 python app.py
@@ -76,7 +87,55 @@ flask run
 http://127.0.0.1:5000
 ```
 
-## 5. 개발 환경
+---
+
+## 6. 테스트 방법
+
+### curl 테스트
+
+```bash
+curl http://127.0.0.1:5000/home
+curl http://127.0.0.1:5000/notes
+curl http://127.0.0.1:5000/notes/1
+curl http://127.0.0.1:5000/notes/999
+curl http://127.0.0.1:5000/health
+```
+
+### 예상 결과
+
+| 요청           | 결과                      |
+|--------------|-------------------------|
+| `/home`      | 서비스 정보 JSON 반환          |
+| `/notes`     | 노트 목록 반환                |
+| `/notes/1`   | 특정 노트 반환                |
+| `/notes/999` | 404 오류                  |
+| `/health`    | `{ "status": "ok" }` 반환 |
+
+---
+
+## 7. Git Workflow
+
+본 프로젝트는 **Feature Branch Workflow**를 사용하였다.
+
+개발 과정:
+
+1. 프로젝트 초기화
+2. 기능별 브랜치 생성
+3. 기능 구현 후 로컬 테스트
+4. Pull Request 생성
+5. Rebase 후 main 브랜치에 병합
+
+사용한 브랜치:
+```txt
+feature/home
+feature/notes
+feature/health
+docs/readme-update
+```
+
+---
+
+## 8. 개발 환경
 
 - Python 3.x
 - Flask
