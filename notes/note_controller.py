@@ -1,8 +1,9 @@
 from typing import Any
 
-from flask import Flask, Response
+from flask import Flask, Response, jsonify, render_template_string, request
 
 from client_validation import NoteFormSpec
+from .note_models import NoteCreateRequest
 from .note_service import NoteService
 
 # 웹 레이어(HTTP 인터페이스)
@@ -55,33 +56,54 @@ class NoteController:
         def create_note_route():
             return self.create_note()
 
-    def list_notes(self) -> Response | tuple[dict[str, Any], int]:
+    def list_notes(self) -> tuple[Response, int]:
         """
         Supporting Contract:
         - GET /notes
         - 200 OK
         - 노트 목록 JSON 반환
         """
-        raise NotImplementedError("RED stage: list_notes route is not implemented yet.")
+        return jsonify(
+            [
+                {"id": note.id, "title": note.title, "content": note.content}
+                for note in self.note_service._notes
+            ]
+        ), 200
 
-    def get_note_detail(self, note_id: int) -> Response | tuple[dict[str, Any], int]:
+    def get_note_detail(self, note_id: int) -> tuple[Response, int]:
         """
         Spec 3:
         - 존재하는 note_id -> 200 + note JSON
         - 존재하지 않는 note_id -> 404 + error JSON
         """
-        raise NotImplementedError("RED stage: get_note_detail route is not implemented yet.")
+        note = self.note_service.get_note_by_id(note_id)
+        if note is None:
+            return jsonify({"error": "Note not found"}), 404
+        return jsonify({"id": note.id, "title": note.title, "content": note.content}), 200
 
-    def show_write_page(self) -> str | Response:
+    def show_write_page(self) -> str:
         """
         Spec 4:
         - GET /write
         - 노트 작성 페이지를 반환
         - 페이지에는 client-side validation 규칙이 주입되어야 함
         """
-        raise NotImplementedError("RED stage: show_write_page is not implemented yet.")
+        rules = self.form_spec.get_rules()
+        return render_template_string(
+            """
+            <html>
+              <body>
+                <h1>Write Note</h1>
+                <script>
+                  const validationRules = {{ rules | tojson }};
+                </script>
+              </body>
+            </html>
+            """,
+            rules=rules.__dict__,
+        )
 
-    def create_note(self) -> Response | tuple[dict[str, Any], int]:
+    def create_note(self) -> tuple[Response, int]:
         """
         Spec 2:
         - POST /api/notes
@@ -89,4 +111,13 @@ class NoteController:
         - 유효한 입력 -> 201 + 생성된 note JSON
         - 유효하지 않은 입력 -> 400 + errors JSON
         """
-        raise NotImplementedError("RED stage: create_note route is not implemented yet.")
+        payload = request.get_json(silent=True) or {}
+        title = payload.get("title")
+        content = payload.get("content")
+
+        validation_result = self.note_service.validate_note_input(title, content)
+        if not validation_result.is_valid:
+            return jsonify({"errors": [error.value for error in validation_result.errors]}), 400
+
+        note = self.note_service.create_note(NoteCreateRequest(title=title, content=content))
+        return jsonify({"id": note.id, "title": note.title, "content": note.content}), 201
