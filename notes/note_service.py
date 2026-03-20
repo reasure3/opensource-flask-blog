@@ -1,6 +1,6 @@
 from typing import Optional
 
-from .note_models import Note, NoteCreateRequest, ValidationResult
+from .note_models import Note, NoteCreateRequest, ValidationResult, ErrorCode
 
 # 비즈니스 로직의 중심
 
@@ -53,7 +53,10 @@ class NoteService:
         - 존재하지 않으면 None 반환
         - 웹 레이어에서 None을 404로 매핑한다
         """
-        raise NotImplementedError("RED stage: get_note_by_id is not implemented yet.")
+        for note in self._notes:
+            if note.id == note_id:
+                return note
+        return None
 
     def validate_note_input(
         self,
@@ -69,7 +72,19 @@ class NoteService:
         - content 최대 길이: 200
         - 반환값은 ValidationResult
         """
-        raise NotImplementedError("RED stage: validate_note_input is not implemented yet.")
+        errors: list[ErrorCode] = []
+
+        if title is None or title.strip() == "":
+            errors.append(ErrorCode.TITLE_REQUIRED)
+        elif len(title) > self._title_max_length:
+            errors.append(ErrorCode.TITLE_TOO_LONG)
+
+        if content is None or content.strip() == "":
+            errors.append(ErrorCode.CONTENT_REQUIRED)
+        elif len(content) > self._content_max_length:
+            errors.append(ErrorCode.CONTENT_TOO_LONG)
+
+        return ValidationResult(is_valid=not errors, errors=errors)
 
     def create_note(self, request: NoteCreateRequest) -> Note:
         """
@@ -79,4 +94,11 @@ class NoteService:
         - 성공 시 생성된 Note 반환
         - 실패 처리(400 응답 등)는 웹 레이어 테스트에서 다룬다
         """
-        raise NotImplementedError("RED stage: create_note is not implemented yet.")
+        validation_result = self.validate_note_input(request.title, request.content)
+        if not validation_result.is_valid:
+            raise ValueError("Invalid note input")
+
+        next_id = max((note.id for note in self._notes), default=0) + 1
+        note = Note(id=next_id, title=request.title, content=request.content)
+        self._notes.append(note)
+        return note

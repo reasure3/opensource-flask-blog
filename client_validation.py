@@ -28,7 +28,12 @@ class NoteFormSpec:
         - 클라이언트가 사용할 검증 규칙 DTO 반환
         - title/content 필수 여부와 최대 길이를 포함
         """
-        raise NotImplementedError("RED stage: get_rules is not implemented yet.")
+        return ClientValidationRules(
+            title_required=True,
+            content_required=True,
+            title_max_length=self.title_max_length,
+            content_max_length=self.content_max_length,
+        )
 
     def get_error_messages(self) -> dict[str, str]:
         """
@@ -36,4 +41,9 @@ class NoteFormSpec:
         - 클라이언트 화면에 보여줄 에러 메시지 집합 반환
         - 예: title required, content required, too long 등
         """
-        raise NotImplementedError("RED stage: get_error_messages is not implemented yet.")
+        return {
+            "title_required": "Title is required.",
+            "content_required": "Content is required.",
+            "title_too_long": f"Title must be at most {self.title_max_length} characters.",
+            "content_too_long": f"Content must be at most {self.content_max_length} characters.",
+        }
