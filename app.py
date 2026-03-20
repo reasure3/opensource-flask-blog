@@ -2,6 +2,7 @@ from flask import Flask, jsonify
 
 from client_validation import NoteFormSpec
 from notes.note_controller import NoteController
+from notes.note_models import Note
 from notes.note_service import NoteService
 
 
@@ -26,7 +27,12 @@ def create_app() -> Flask:
         return jsonify({"status": "ok"})
 
     # TADD Step 1: contract objects only
-    note_service = NoteService()
+    note_service = NoteService(
+        initial_notes=[
+            Note(id=1, title="Welcome note", content="This is a default note for manual testing."),
+            Note(id=2, title="Second Welcome note", content="This is a default note for manual testing."),
+        ]
+    )
     form_spec = NoteFormSpec()
     note_controller = NoteController(note_service, form_spec)
     note_controller.register_routes(_app)

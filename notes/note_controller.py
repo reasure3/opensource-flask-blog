@@ -89,18 +89,110 @@ class NoteController:
         - 페이지에는 client-side validation 규칙이 주입되어야 함
         """
         rules = self.form_spec.get_rules()
+        error_messages = self.form_spec.get_error_messages()
         return render_template_string(
             """
-            <html>
+            <!doctype html>
+            <html lang="en">
+              <head>
+                <meta charset="utf-8" />
+                <title>Write Note</title>
+              </head>
               <body>
                 <h1>Write Note</h1>
+
+                <form id="note-form">
+                  <div>
+                    <label for="title">Title</label>
+                    <input id="title" name="title" type="text" maxlength="{{ rules.title_max_length }}" />
+                  </div>
+
+                  <div>
+                    <label for="content">Content</label>
+                    <textarea id="content" name="content" maxlength="{{ rules.content_max_length }}"></textarea>
+                  </div>
+
+                  <button type="submit">Submit</button>
+                </form>
+
+                <div id="message"></div>
+
                 <script>
                   const validationRules = {{ rules | tojson }};
+                  const errorMessages = {{ error_messages | tojson }};
+                  const form = document.getElementById("note-form");
+                  const titleInput = document.getElementById("title");
+                  const contentInput = document.getElementById("content");
+                  const messageBox = document.getElementById("message");
+
+                  function showMessage(text, isError) {
+                    messageBox.textContent = text;
+                    messageBox.style.color = isError ? "red" : "green";
+                  }
+
+                  function validateInput() {
+                    const title = titleInput.value;
+                    const content = contentInput.value;
+                    const trimmedTitle = title.trim();
+                    const trimmedContent = content.trim();
+
+                    if (validationRules.title_required && (!trimmedTitle || trimmedTitle.length === 0)) {
+                      return errorMessages.title_required;
+                    }
+
+                    if (trimmedTitle.length > validationRules.title_max_length) {
+                      return errorMessages.title_too_long;
+                    }
+
+                    if (validationRules.content_required && (!trimmedContent || trimmedContent.length === 0)) {
+                      return errorMessages.content_required;
+                    }
+
+                    if (trimmedContent.length > validationRules.content_max_length) {
+                      return errorMessages.content_too_long;
+                    }
+
+                    return null;
+                  }
+
+                  form.addEventListener("submit", async (event) => {
+                    event.preventDefault();
+
+                    const validationError = validateInput();
+                    if (validationError) {
+                      showMessage(validationError, true);
+                      return;
+                    }
+
+                    try {
+                      const response = await fetch("/api/notes", {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                          title: titleInput.value,
+                          content: contentInput.value
+                        })
+                      });
+
+                      if (response.ok) {
+                        showMessage("Note saved!", false);
+                        titleInput.value = "";
+                        contentInput.value = "";
+                      } else {
+                        showMessage("Failed to save note.", true);
+                      }
+                    } catch (error) {
+                      showMessage("An error occurred.", true);
+                    }
+                  });
                 </script>
               </body>
             </html>
             """,
             rules=rules.__dict__,
+            error_messages=error_messages,
         )
 
     def create_note(self) -> tuple[Response, int]:

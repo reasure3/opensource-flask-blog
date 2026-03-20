@@ -1,0 +1,38 @@
+1. 좋아. 다만 브라우저에서도 잘 얻어오는지 수동으로 테스트해보고 싶어. 기본 note를 추가해줘
+
+
+2. 현재 Flask 프로젝트에서 `notes.note_controller.NoteController`와 `client_validation.NoteFormSpec`를 사용해 브라우저에서 직접 노트를 작성할 수 있는 `/write` 페이지를 구현해줘.
+
+반드시 구현할 것:
+- `GET /write` 요청 시 HTML 폼 페이지 반환
+- HTML 폼에는 `title`, `content`, submit 버튼 포함
+- JavaScript client-side validation 포함
+- validation 규칙은 `NoteFormSpec`의 규칙과 일치해야 함
+- validation 통과 시 `fetch`로 `POST /api/notes` 요청 전송
+- 성공 시 생성 결과 표시
+- 실패 시 에러 메시지 표시
+
+검증 규칙:
+- title required
+- content required
+- whitespace-only 금지
+- title max length = 50
+- content max length = 200
+
+응답 동작:
+- `/api/notes` 성공 -> 201 + 생성된 note JSON
+- `/api/notes` 실패 -> 400 + errors JSON
+
+구현 지침:
+- 기존 public interface는 유지해줘.
+- 비즈니스 로직은 `NoteService`에 두고, 컨트롤러는 요청/응답 처리만 담당하게 해줘.
+- 클라이언트 검증 규칙은 `NoteFormSpec.get_rules()`와 `get_error_messages()`를 활용할 수 있으면 활용해줘.
+- 템플릿 파일을 새로 만들지 않고 간단한 HTML 문자열로 구현해도 된다.
+- 테스트 코드는 수정하지 말아줘.
+- 최소한의 구현으로 실제 브라우저에서 동작 가능하게 만들어줘.
+- 최종 출력은 수정된 코드만 보여줘.
+
+주의:
+- 이번 구현은 과제용 최소 기능 구현이다.
+- UI를 예쁘게 꾸미는 것보다 실제 동작과 검증 흐름이 더 중요하다.
+- 불필요한 파일 추가나 대규모 구조 변경은 하지 말아줘.
