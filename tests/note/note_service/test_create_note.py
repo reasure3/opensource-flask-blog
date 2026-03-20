@@ -32,13 +32,11 @@ def test_create_note_returns_note_when_request_is_valid(service: NoteService) ->
         "a" * 51,
     ],
 )
-def test_create_note_raises_or_fails_when_title_is_invalid(service: NoteService, title: str | None) -> None:
-    # Given
+def test_create_note_raises_value_error_when_title_is_invalid(service: NoteService, title: str | None) -> None:
     request = NoteCreateRequest(title=title, content="Valid content")
 
-    # When / Then
-    result = service.create_note(request)
-    assert result is not None
+    with pytest.raises(ValueError):
+        service.create_note(request)
 
 
 @pytest.mark.parametrize(
@@ -50,10 +48,8 @@ def test_create_note_raises_or_fails_when_title_is_invalid(service: NoteService,
         "a" * 201,
     ],
 )
-def test_create_note_raises_or_fails_when_content_is_invalid(service: NoteService, content: str | None) -> None:
-    # Given
+def test_create_note_raises_value_error_when_content_is_invalid(service: NoteService, content: str | None) -> None:
     request = NoteCreateRequest(title="Valid title", content=content)
 
-    # When / Then
-    result = service.create_note(request)
-    assert result is not None
+    with pytest.raises(ValueError):
+        service.create_note(request)
