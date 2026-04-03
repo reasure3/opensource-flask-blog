@@ -1,45 +1,47 @@
 from flask import Flask, jsonify
 
-app = Flask(__name__)
-
-notes = [
-    {"id": 1, "title": "Git Basics", "content": "Learn commit, branch, and merge."},
-    {"id": 2, "title": "Flask Basics", "content": "Learn route and jsonify."},
-    {"id": 3, "title": "Testing", "content": "Manual testing with curl."}
-]
+from client_validation import NoteFormSpec
+from notes.note_controller import NoteController
+from notes.note_models import Note
+from notes.note_service import NoteService
 
 
-@app.route("/")
-@app.route("/home")
-def home():
-    return jsonify({
-        "message": "Welcome to the Flask Study Notes Service",
-        "description": "This project is for practicing Git workflow with Flask.",
-        "available_endpoints": [
-            "/",
-            "/home"
+def create_app() -> Flask:
+    _app = Flask(__name__)
+
+    # 기존 Part 1 route는 유지
+    @_app.get("/")
+    @_app.get("/home")
+    def home():
+        return jsonify({
+            "message": "Welcome to the Flask Study Notes Service",
+            "description": "This project is for practicing Git workflow with Flask.",
+            "available_endpoints": [
+                "/",
+                "/home"
+            ]
+        })
+
+    @_app.get("/health")
+    def health():
+        return jsonify({"status": "ok"})
+
+    # TADD Step 1: contract objects only
+    note_service = NoteService(
+        initial_notes=[
+            Note(id=1, title="Welcome note", content="This is a default note for manual testing."),
+            Note(id=2, title="Second Welcome note", content="This is a default note for manual testing."),
         ]
-    })
+    )
+    form_spec = NoteFormSpec()
+    note_controller = NoteController(note_service, form_spec)
+    note_controller.register_routes(_app)
+
+    return _app
 
 
-@app.route("/notes")
-def get_notes():
-    return jsonify(notes)
+app = create_app()
 
-
-@app.route("/notes/<int:note_id>")
-def get_note(note_id):
-    for note in notes:
-        if note["id"] == note_id:
-            return jsonify(note)
-
-    return jsonify({"error": "Note not found"}), 404
-
-@app.route("/health")
-def health():
-    return jsonify({
-        "status": "ok"
-    })
 
 if __name__ == "__main__":
     app.run(debug=True)

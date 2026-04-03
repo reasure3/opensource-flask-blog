@@ -1,0 +1,27 @@
+pytest와 Flask test client를 사용해서 `notes.note_controller.NoteController` 관련 웹 라우트 테스트 코드를 작성해줘.
+
+조건:
+- 프로덕션 코드는 구현하지 말고, 테스트 코드만 작성.
+- Flask test client를 사용해 HTTP 요청/응답을 검증.
+- 각 테스트는 하나의 HTTP 동작만 검증하도록 분리.
+- 내부 구현이 아니라 상태 코드와 응답 JSON/응답 내용을 검증.
+
+현재 계약(인터페이스):
+- GET `/notes`
+- GET `/notes/<int:note_id>`
+- GET `/write`
+- POST `/api/notes`
+
+동작 규칙:
+1. GET `/notes`는 200 OK와 노트 목록 JSON을 반환해야 한다.
+2. GET `/notes/<id>`는 존재하는 id면 200 OK와 해당 노트 JSON을 반환해야 한다.
+3. GET `/notes/<id>`는 존재하지 않는 id면 404와 에러 JSON을 반환해야 한다.
+4. POST `/api/notes`는 유효한 입력이면 201과 생성된 노트 JSON을 반환해야 한다.
+5. POST `/api/notes`는 잘못된 입력이면 400과 errors 정보를 반환해야 한다.
+6. GET `/write`는 작성 페이지를 반환해야 하며, client-side validation 규칙을 사용할 수 있어야 한다.
+
+추가 요구사항:
+- 성공, 실패, 엣지 케이스를 모두 포함해줘.
+- 필요한 경우 fixture를 사용해 Flask app과 test client를 구성해줘.
+- 테스트 이름은 명확하게 작성해줘.
+- 최종 출력은 바로 저장 가능한 pytest 테스트 코드만 보여줘.

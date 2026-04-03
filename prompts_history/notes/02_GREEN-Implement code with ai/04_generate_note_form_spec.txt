@@ -1,0 +1,18 @@
+현재 pytest 테스트가 작성되어 있어.
+`client_validation.NoteFormSpec.get_rules` 와 `get_error_messages` 메서드만 구현해서
+현재 failing test를 통과하도록 해줘.
+
+조건:
+- 테스트 코드는 수정하지 말아줘.
+- 기존 인터페이스는 유지해줘.
+- 최소 구현만 해줘.
+- 아직 리팩터링은 하지 말아줘.
+
+계약:
+- `get_rules()`는 `ClientValidationRules`를 반환해야 한다.
+- 기본값은 title_required=True, content_required=True,
+  title_max_length=50, content_max_length=200 이다.
+- 생성자에서 다른 길이 제한을 주면 `get_rules()` 결과에 반영해야 한다.
+- `get_error_messages()`는 필수 입력/길이 초과 메시지를 담은 dict를 반환해야 한다.
+
+최종 출력은 수정된 프로덕션 코드만 보여줘.
