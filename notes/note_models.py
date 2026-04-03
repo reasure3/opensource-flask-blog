@@ -57,6 +57,13 @@ class Note:
     title: str
     content: str
 
+    def to_dict(self) -> dict[str, int | str]:
+        return {
+            "id": self.id,
+            "title": self.title,
+            "content": self.content,
+        }
+
 
 @dataclass
 class ClientValidationRules:

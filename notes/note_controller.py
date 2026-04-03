@@ -65,7 +65,7 @@ class NoteController:
         """
         return jsonify(
             [
-                {"id": note.id, "title": note.title, "content": note.content}
+                note.to_dict()
                 for note in self.note_service.list_notes()
             ]
         ), 200
@@ -79,7 +79,7 @@ class NoteController:
         note = self.note_service.get_note_by_id(note_id)
         if note is None:
             return jsonify({"error": "Note not found"}), 404
-        return jsonify({"id": note.id, "title": note.title, "content": note.content}), 200
+        return jsonify(note.to_dict()), 200
 
     def show_write_page(self) -> str:
         """
@@ -212,4 +212,4 @@ class NoteController:
             return jsonify({"errors": [error.value for error in validation_result.errors]}), 400
 
         note = self.note_service.create_note(NoteCreateRequest(title=title, content=content))
-        return jsonify({"id": note.id, "title": note.title, "content": note.content}), 201
+        return jsonify(note.to_dict()), 201
