@@ -1,4 +1,5 @@
 from notes.note_models import (
+    ClientValidationFieldRule,
     ClientValidationRules,
     DEFAULT_NOTE_CONTENT_MAX_LENGTH,
     DEFAULT_NOTE_TITLE_MAX_LENGTH,
@@ -52,3 +53,21 @@ class NoteFormSpec:
             ErrorCode.TITLE_TOO_LONG: f"Title must be at most {self.title_max_length} characters.",
             ErrorCode.CONTENT_TOO_LONG: f"Content must be at most {self.content_max_length} characters.",
         }
+
+    def get_field_rules(self) -> list[ClientValidationFieldRule]:
+        return [
+            ClientValidationFieldRule(
+                field_name="title",
+                required=True,
+                max_length=self.title_max_length,
+                required_error_code=ErrorCode.TITLE_REQUIRED,
+                too_long_error_code=ErrorCode.TITLE_TOO_LONG,
+            ),
+            ClientValidationFieldRule(
+                field_name="content",
+                required=True,
+                max_length=self.content_max_length,
+                required_error_code=ErrorCode.CONTENT_REQUIRED,
+                too_long_error_code=ErrorCode.CONTENT_TOO_LONG,
+            ),
+        ]
