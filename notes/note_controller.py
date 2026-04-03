@@ -54,19 +54,19 @@ WRITE_NOTE_TEMPLATE = """
         const trimmedContent = content.trim();
 
         if (validationRules.title_required && (!trimmedTitle || trimmedTitle.length === 0)) {
-          return errorMessages.title_required;
+          return errorMessages.TITLE_REQUIRED;
         }
 
         if (trimmedTitle.length > validationRules.title_max_length) {
-          return errorMessages.title_too_long;
+          return errorMessages.TITLE_TOO_LONG;
         }
 
         if (validationRules.content_required && (!trimmedContent || trimmedContent.length === 0)) {
-          return errorMessages.content_required;
+          return errorMessages.CONTENT_REQUIRED;
         }
 
         if (trimmedContent.length > validationRules.content_max_length) {
-          return errorMessages.content_too_long;
+          return errorMessages.CONTENT_TOO_LONG;
         }
 
         return null;
@@ -195,7 +195,10 @@ class NoteController:
         rules = self.form_spec.get_rules()
         return {
             "rules": rules.__dict__,
-            "error_messages": self.form_spec.get_error_messages(),
+            "error_messages": {
+                error_code.value: message
+                for error_code, message in self.form_spec.get_error_messages().items()
+            },
         }
 
     def create_note(self) -> tuple[Response, int]:

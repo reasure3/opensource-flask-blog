@@ -2,6 +2,7 @@ from notes.note_models import (
     ClientValidationRules,
     DEFAULT_NOTE_CONTENT_MAX_LENGTH,
     DEFAULT_NOTE_TITLE_MAX_LENGTH,
+    ErrorCode,
 )
 
 
@@ -39,15 +40,15 @@ class NoteFormSpec:
             content_max_length=self.content_max_length,
         )
 
-    def get_error_messages(self) -> dict[str, str]:
+    def get_error_messages(self) -> dict[ErrorCode, str]:
         """
         Spec 4:
         - 클라이언트 화면에 보여줄 에러 메시지 집합 반환
         - 예: title required, content required, too long 등
         """
         return {
-            "title_required": "Title is required.",
-            "content_required": "Content is required.",
-            "title_too_long": f"Title must be at most {self.title_max_length} characters.",
-            "content_too_long": f"Content must be at most {self.content_max_length} characters.",
+            ErrorCode.TITLE_REQUIRED: "Title is required.",
+            ErrorCode.CONTENT_REQUIRED: "Content is required.",
+            ErrorCode.TITLE_TOO_LONG: f"Title must be at most {self.title_max_length} characters.",
+            ErrorCode.CONTENT_TOO_LONG: f"Content must be at most {self.content_max_length} characters.",
         }
