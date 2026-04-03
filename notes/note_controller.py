@@ -66,7 +66,7 @@ class NoteController:
         return jsonify(
             [
                 {"id": note.id, "title": note.title, "content": note.content}
-                for note in self.note_service._notes
+                for note in self.note_service.list_notes()
             ]
         ), 200
 
