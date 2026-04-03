@@ -6,6 +6,24 @@ from notes.note_models import (
     ErrorCode,
 )
 
+TITLE_FIELD_NAME = "title"
+CONTENT_FIELD_NAME = "content"
+
+CLIENT_VALIDATION_FIELD_DEFINITIONS = (
+    {
+        "field_name": TITLE_FIELD_NAME,
+        "required": True,
+        "required_error_code": ErrorCode.TITLE_REQUIRED,
+        "too_long_error_code": ErrorCode.TITLE_TOO_LONG,
+    },
+    {
+        "field_name": CONTENT_FIELD_NAME,
+        "required": True,
+        "required_error_code": ErrorCode.CONTENT_REQUIRED,
+        "too_long_error_code": ErrorCode.CONTENT_TOO_LONG,
+    },
+)
+
 
 class NoteFormSpec:
     """
@@ -55,19 +73,17 @@ class NoteFormSpec:
         }
 
     def get_field_rules(self) -> list[ClientValidationFieldRule]:
+        max_length_by_field_name = {
+            TITLE_FIELD_NAME: self.title_max_length,
+            CONTENT_FIELD_NAME: self.content_max_length,
+        }
         return [
             ClientValidationFieldRule(
-                field_name="title",
-                required=True,
-                max_length=self.title_max_length,
-                required_error_code=ErrorCode.TITLE_REQUIRED,
-                too_long_error_code=ErrorCode.TITLE_TOO_LONG,
-            ),
-            ClientValidationFieldRule(
-                field_name="content",
-                required=True,
-                max_length=self.content_max_length,
-                required_error_code=ErrorCode.CONTENT_REQUIRED,
-                too_long_error_code=ErrorCode.CONTENT_TOO_LONG,
-            ),
+                field_name=field_definition["field_name"],
+                required=field_definition["required"],
+                max_length=max_length_by_field_name[field_definition["field_name"]],
+                required_error_code=field_definition["required_error_code"],
+                too_long_error_code=field_definition["too_long_error_code"],
+            )
+            for field_definition in CLIENT_VALIDATION_FIELD_DEFINITIONS
         ]
