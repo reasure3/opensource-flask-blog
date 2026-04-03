@@ -36,11 +36,16 @@ WRITE_NOTE_TEMPLATE = """
 
     <script>
       const validationRules = {{ rules | tojson }};
+      const fieldRules = {{ field_rules | tojson }};
       const errorMessages = {{ error_messages | tojson }};
       const form = document.getElementById("note-form");
       const titleInput = document.getElementById("title");
       const contentInput = document.getElementById("content");
       const messageBox = document.getElementById("message");
+      const inputByFieldName = {
+        title: titleInput,
+        content: contentInput
+      };
 
       function showMessage(text, isError) {
         messageBox.textContent = text;
@@ -48,25 +53,18 @@ WRITE_NOTE_TEMPLATE = """
       }
 
       function validateInput() {
-        const title = titleInput.value;
-        const content = contentInput.value;
-        const trimmedTitle = title.trim();
-        const trimmedContent = content.trim();
+        for (const fieldRule of fieldRules) {
+          const input = inputByFieldName[fieldRule.field_name];
+          const value = input.value;
+          const trimmedValue = value.trim();
 
-        if (validationRules.title_required && (!trimmedTitle || trimmedTitle.length === 0)) {
-          return errorMessages.TITLE_REQUIRED;
-        }
+          if (fieldRule.required && (!trimmedValue || trimmedValue.length === 0)) {
+            return errorMessages[fieldRule.required_error_code];
+          }
 
-        if (trimmedTitle.length > validationRules.title_max_length) {
-          return errorMessages.TITLE_TOO_LONG;
-        }
-
-        if (validationRules.content_required && (!trimmedContent || trimmedContent.length === 0)) {
-          return errorMessages.CONTENT_REQUIRED;
-        }
-
-        if (trimmedContent.length > validationRules.content_max_length) {
-          return errorMessages.CONTENT_TOO_LONG;
+          if (trimmedValue.length > fieldRule.max_length) {
+            return errorMessages[fieldRule.too_long_error_code];
+          }
         }
 
         return null;
@@ -195,6 +193,16 @@ class NoteController:
         rules = self.form_spec.get_rules()
         return {
             "rules": rules.__dict__,
+            "field_rules": [
+                {
+                    "field_name": field_rule.field_name,
+                    "required": field_rule.required,
+                    "max_length": field_rule.max_length,
+                    "required_error_code": field_rule.required_error_code.value,
+                    "too_long_error_code": field_rule.too_long_error_code.value,
+                }
+                for field_rule in self.form_spec.get_field_rules()
+            ],
             "error_messages": {
                 error_code.value: message
                 for error_code, message in self.form_spec.get_error_messages().items()

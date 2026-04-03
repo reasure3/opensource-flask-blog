@@ -81,3 +81,12 @@ class ClientValidationRules:
     content_required: bool = True
     title_max_length: int = DEFAULT_NOTE_TITLE_MAX_LENGTH
     content_max_length: int = DEFAULT_NOTE_CONTENT_MAX_LENGTH
+
+
+@dataclass
+class ClientValidationFieldRule:
+    field_name: str
+    required: bool
+    max_length: int
+    required_error_code: ErrorCode
+    too_long_error_code: ErrorCode
