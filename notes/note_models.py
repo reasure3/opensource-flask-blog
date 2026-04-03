@@ -2,6 +2,9 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 
+DEFAULT_NOTE_TITLE_MAX_LENGTH = 50
+DEFAULT_NOTE_CONTENT_MAX_LENGTH = 200
+
 # 데이터 구조를 정의하는 모듈
 
 
@@ -76,5 +79,5 @@ class ClientValidationRules:
     """
     title_required: bool = True
     content_required: bool = True
-    title_max_length: int = 50
-    content_max_length: int = 200
+    title_max_length: int = DEFAULT_NOTE_TITLE_MAX_LENGTH
+    content_max_length: int = DEFAULT_NOTE_CONTENT_MAX_LENGTH

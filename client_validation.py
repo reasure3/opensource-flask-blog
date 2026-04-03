@@ -1,4 +1,8 @@
-from notes.note_models import ClientValidationRules
+from notes.note_models import (
+    ClientValidationRules,
+    DEFAULT_NOTE_CONTENT_MAX_LENGTH,
+    DEFAULT_NOTE_TITLE_MAX_LENGTH,
+)
 
 
 class NoteFormSpec:
@@ -12,8 +16,8 @@ class NoteFormSpec:
 
     def __init__(
         self,
-        title_max_length: int = 50,
-        content_max_length: int = 200,
+        title_max_length: int = DEFAULT_NOTE_TITLE_MAX_LENGTH,
+        content_max_length: int = DEFAULT_NOTE_CONTENT_MAX_LENGTH,
     ) -> None:
         """
         Contract:
