@@ -1,6 +1,13 @@
 from typing import Optional
 
-from .note_models import Note, NoteCreateRequest, ValidationResult, ErrorCode
+from .note_models import (
+    DEFAULT_NOTE_CONTENT_MAX_LENGTH,
+    DEFAULT_NOTE_TITLE_MAX_LENGTH,
+    ErrorCode,
+    Note,
+    NoteCreateRequest,
+    ValidationResult,
+)
 
 # 비즈니스 로직의 중심
 
@@ -25,8 +32,8 @@ class NoteService:
     def __init__(
         self,
         initial_notes: Optional[list[Note]] = None,
-        title_max_length: int = 50,
-        content_max_length: int = 200,
+        title_max_length: int = DEFAULT_NOTE_TITLE_MAX_LENGTH,
+        content_max_length: int = DEFAULT_NOTE_CONTENT_MAX_LENGTH,
     ) -> None:
         """
         Contract:
