@@ -34,7 +34,7 @@ class NoteService:
         - 서버/클라이언트가 공유할 길이 제한을 보관한다.
         - 지금 단계에서는 in-memory 저장소를 전제로 설계한다.
         """
-        self._notes = initial_notes or []
+        self._notes = list(initial_notes) if initial_notes is not None else []
         self._title_max_length = title_max_length
         self._content_max_length = content_max_length
 
@@ -44,7 +44,7 @@ class NoteService:
         - GET /notes 에서 사용할 전체 노트 목록 반환
         - 반환 타입은 list[Note]
         """
-        raise NotImplementedError("RED stage: list_notes is not implemented yet.")
+        return list(self._notes)
 
     def get_note_by_id(self, note_id: int) -> Optional[Note]:
         """
