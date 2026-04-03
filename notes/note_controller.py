@@ -6,24 +6,125 @@ from client_validation import NoteFormSpec
 from .note_models import NoteCreateRequest
 from .note_service import NoteService
 
-# 웹 레이어(HTTP 인터페이스)
+# Web layer (HTTP interface)
+
+WRITE_NOTE_TEMPLATE = """
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Write Note</title>
+  </head>
+  <body>
+    <h1>Write Note</h1>
+
+    <form id="note-form">
+      <div>
+        <label for="title">Title</label>
+        <input id="title" name="title" type="text" maxlength="{{ rules.title_max_length }}" />
+      </div>
+
+      <div>
+        <label for="content">Content</label>
+        <textarea id="content" name="content" maxlength="{{ rules.content_max_length }}"></textarea>
+      </div>
+
+      <button type="submit">Submit</button>
+    </form>
+
+    <div id="message"></div>
+
+    <script>
+      const validationRules = {{ rules | tojson }};
+      const errorMessages = {{ error_messages | tojson }};
+      const form = document.getElementById("note-form");
+      const titleInput = document.getElementById("title");
+      const contentInput = document.getElementById("content");
+      const messageBox = document.getElementById("message");
+
+      function showMessage(text, isError) {
+        messageBox.textContent = text;
+        messageBox.style.color = isError ? "red" : "green";
+      }
+
+      function validateInput() {
+        const title = titleInput.value;
+        const content = contentInput.value;
+        const trimmedTitle = title.trim();
+        const trimmedContent = content.trim();
+
+        if (validationRules.title_required && (!trimmedTitle || trimmedTitle.length === 0)) {
+          return errorMessages.title_required;
+        }
+
+        if (trimmedTitle.length > validationRules.title_max_length) {
+          return errorMessages.title_too_long;
+        }
+
+        if (validationRules.content_required && (!trimmedContent || trimmedContent.length === 0)) {
+          return errorMessages.content_required;
+        }
+
+        if (trimmedContent.length > validationRules.content_max_length) {
+          return errorMessages.content_too_long;
+        }
+
+        return null;
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const validationError = validateInput();
+        if (validationError) {
+          showMessage(validationError, true);
+          return;
+        }
+
+        try {
+          const response = await fetch("/api/notes", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              title: titleInput.value,
+              content: contentInput.value
+            })
+          });
+
+          if (response.ok) {
+            showMessage("Note saved!", false);
+            titleInput.value = "";
+            contentInput.value = "";
+          } else {
+            showMessage("Failed to save note.", true);
+          }
+        } catch (error) {
+          showMessage("An error occurred.", true);
+        }
+      });
+    </script>
+  </body>
+</html>
+"""
 
 
 class NoteController:
     """
-    웹 레이어 계약 클래스.
+    Web layer contract class.
 
-    역할:
-    - Flask route 등록
-    - HTTP 요청/응답 형식 정의
-    - 서비스 결과를 상태 코드와 JSON/페이지 응답으로 매핑
+    Responsibilities:
+    - Register Flask routes
+    - Define HTTP request/response shapes
+    - Map service results to status codes and JSON/page responses
     """
 
     def __init__(self, note_service: NoteService, form_spec: NoteFormSpec) -> None:
         """
         Contract:
-        - 비즈니스 로직은 NoteService에 위임
-        - 클라이언트 검증 규칙은 NoteFormSpec에서 가져옴
+        - Delegate business logic to NoteService
+        - Read client validation rules from NoteFormSpec
         """
         self.note_service = note_service
         self.form_spec = form_spec
@@ -31,7 +132,7 @@ class NoteController:
     def register_routes(self, app: Flask) -> None:
         """
         Contract:
-        아래 public route를 Flask app에 등록한다.
+        Register public routes on the Flask app.
 
         Routes:
         - GET /notes
@@ -61,7 +162,7 @@ class NoteController:
         Supporting Contract:
         - GET /notes
         - 200 OK
-        - 노트 목록 JSON 반환
+        - Return the note list as JSON
         """
         return jsonify(
             [
@@ -73,8 +174,8 @@ class NoteController:
     def get_note_detail(self, note_id: int) -> tuple[Response, int]:
         """
         Spec 3:
-        - 존재하는 note_id -> 200 + note JSON
-        - 존재하지 않는 note_id -> 404 + error JSON
+        - Existing note_id -> 200 + note JSON
+        - Missing note_id -> 404 + error JSON
         """
         note = self.note_service.get_note_by_id(note_id)
         if note is None:
@@ -85,123 +186,25 @@ class NoteController:
         """
         Spec 4:
         - GET /write
-        - 노트 작성 페이지를 반환
-        - 페이지에는 client-side validation 규칙이 주입되어야 함
+        - Return the note write page
+        - Inject client-side validation rules into the page
         """
+        return render_template_string(WRITE_NOTE_TEMPLATE, **self._get_write_page_context())
+
+    def _get_write_page_context(self) -> dict[str, Any]:
         rules = self.form_spec.get_rules()
-        error_messages = self.form_spec.get_error_messages()
-        return render_template_string(
-            """
-            <!doctype html>
-            <html lang="en">
-              <head>
-                <meta charset="utf-8" />
-                <title>Write Note</title>
-              </head>
-              <body>
-                <h1>Write Note</h1>
-
-                <form id="note-form">
-                  <div>
-                    <label for="title">Title</label>
-                    <input id="title" name="title" type="text" maxlength="{{ rules.title_max_length }}" />
-                  </div>
-
-                  <div>
-                    <label for="content">Content</label>
-                    <textarea id="content" name="content" maxlength="{{ rules.content_max_length }}"></textarea>
-                  </div>
-
-                  <button type="submit">Submit</button>
-                </form>
-
-                <div id="message"></div>
-
-                <script>
-                  const validationRules = {{ rules | tojson }};
-                  const errorMessages = {{ error_messages | tojson }};
-                  const form = document.getElementById("note-form");
-                  const titleInput = document.getElementById("title");
-                  const contentInput = document.getElementById("content");
-                  const messageBox = document.getElementById("message");
-
-                  function showMessage(text, isError) {
-                    messageBox.textContent = text;
-                    messageBox.style.color = isError ? "red" : "green";
-                  }
-
-                  function validateInput() {
-                    const title = titleInput.value;
-                    const content = contentInput.value;
-                    const trimmedTitle = title.trim();
-                    const trimmedContent = content.trim();
-
-                    if (validationRules.title_required && (!trimmedTitle || trimmedTitle.length === 0)) {
-                      return errorMessages.title_required;
-                    }
-
-                    if (trimmedTitle.length > validationRules.title_max_length) {
-                      return errorMessages.title_too_long;
-                    }
-
-                    if (validationRules.content_required && (!trimmedContent || trimmedContent.length === 0)) {
-                      return errorMessages.content_required;
-                    }
-
-                    if (trimmedContent.length > validationRules.content_max_length) {
-                      return errorMessages.content_too_long;
-                    }
-
-                    return null;
-                  }
-
-                  form.addEventListener("submit", async (event) => {
-                    event.preventDefault();
-
-                    const validationError = validateInput();
-                    if (validationError) {
-                      showMessage(validationError, true);
-                      return;
-                    }
-
-                    try {
-                      const response = await fetch("/api/notes", {
-                        method: "POST",
-                        headers: {
-                          "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({
-                          title: titleInput.value,
-                          content: contentInput.value
-                        })
-                      });
-
-                      if (response.ok) {
-                        showMessage("Note saved!", false);
-                        titleInput.value = "";
-                        contentInput.value = "";
-                      } else {
-                        showMessage("Failed to save note.", true);
-                      }
-                    } catch (error) {
-                      showMessage("An error occurred.", true);
-                    }
-                  });
-                </script>
-              </body>
-            </html>
-            """,
-            rules=rules.__dict__,
-            error_messages=error_messages,
-        )
+        return {
+            "rules": rules.__dict__,
+            "error_messages": self.form_spec.get_error_messages(),
+        }
 
     def create_note(self) -> tuple[Response, int]:
         """
         Spec 2:
         - POST /api/notes
         - request JSON: { "title": ..., "content": ... }
-        - 유효한 입력 -> 201 + 생성된 note JSON
-        - 유효하지 않은 입력 -> 400 + errors JSON
+        - Valid input -> 201 + created note JSON
+        - Invalid input -> 400 + errors JSON
         """
         payload = request.get_json(silent=True) or {}
         title = payload.get("title")
