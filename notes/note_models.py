@@ -1,3 +1,5 @@
+"""노트 애플리케이션에서 사용하는 도메인 모델과 DTO 모음."""
+
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
@@ -5,14 +7,10 @@ from typing import Optional
 DEFAULT_NOTE_TITLE_MAX_LENGTH = 50
 DEFAULT_NOTE_CONTENT_MAX_LENGTH = 200
 
-# 데이터 구조를 정의하는 모듈
-
 
 class ErrorCode(str, Enum):
-    """
-    Spec 1 / 2 / 3에서 공통으로 사용할 machine-readable 에러 코드.
-    테스트에서는 문자열 비교보다 이 코드를 비교하는 쪽이 명확하다.
-    """
+    """검증 및 조회 실패를 표현하는 기계 친화적 오류 코드."""
+
     TITLE_REQUIRED = "TITLE_REQUIRED"
     TITLE_TOO_LONG = "TITLE_TOO_LONG"
     CONTENT_REQUIRED = "CONTENT_REQUIRED"
@@ -22,45 +20,30 @@ class ErrorCode(str, Enum):
 
 @dataclass
 class ValidationResult:
-    """
-    Spec 1: validate_note_input(...)의 반환 DTO
+    """노트 입력 검증 성공 여부와 오류 목록을 표현한다."""
 
-    Contract:
-    - is_valid: 모든 검증 규칙 통과 여부
-    - errors: 실패한 규칙의 에러 코드 목록
-    """
     is_valid: bool
     errors: list[ErrorCode] = field(default_factory=list)
 
 
 @dataclass
 class NoteCreateRequest:
-    """
-    Spec 2: POST /api/notes 요청 DTO
+    """노트 생성 시 사용하는 입력 DTO."""
 
-    Contract:
-    - title: 사용자가 입력한 제목
-    - content: 사용자가 입력한 본문
-    """
     title: Optional[str]
     content: Optional[str]
 
 
 @dataclass
 class Note:
-    """
-    Spec 2 / 3: 생성 및 조회에 사용하는 엔티티
+    """저장된 노트 엔티티."""
 
-    Contract:
-    - id: 노트 식별자
-    - title: 노트 제목
-    - content: 노트 내용
-    """
     id: int
     title: str
     content: str
 
     def to_dict(self) -> dict[str, int | str]:
+        """노트를 JSON 직렬화 가능한 딕셔너리로 변환한다."""
         return {
             "id": self.id,
             "title": self.title,
@@ -70,13 +53,8 @@ class Note:
 
 @dataclass
 class ClientValidationRules:
-    """
-    Spec 4: 클라이언트 측 검증 규칙 DTO
+    """브라우저 작성 폼과 공유하는 검증 규칙 묶음."""
 
-    Contract:
-    - title/content는 필수
-    - 최대 길이 제한 제공
-    """
     title_required: bool = True
     content_required: bool = True
     title_max_length: int = DEFAULT_NOTE_TITLE_MAX_LENGTH
@@ -85,6 +63,8 @@ class ClientValidationRules:
 
 @dataclass
 class ClientValidationFieldRule:
+    """브라우저에 노출되는 필드 단위 검증 메타데이터."""
+
     field_name: str
     required: bool
     max_length: int

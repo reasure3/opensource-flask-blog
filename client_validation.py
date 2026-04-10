@@ -1,3 +1,5 @@
+"""노트 작성 폼과 공유하는 클라이언트 검증 규칙."""
+
 from notes.note_models import (
     ClientValidationFieldRule,
     ClientValidationRules,
@@ -26,32 +28,19 @@ CLIENT_VALIDATION_FIELD_DEFINITIONS = (
 
 
 class NoteFormSpec:
-    """
-    Spec 4용 계약 클래스.
-
-    목적:
-    - 서버와 동일한 검증 규칙을 클라이언트(JS / 템플릿)에도 전달할 수 있게 한다.
-    - 나중에 /write 페이지에서 이 규칙을 사용해 client-side verification을 구현한다.
-    """
+    """노트 도메인 규칙을 브라우저용 검증 정보로 제공한다."""
 
     def __init__(
         self,
         title_max_length: int = DEFAULT_NOTE_TITLE_MAX_LENGTH,
         content_max_length: int = DEFAULT_NOTE_CONTENT_MAX_LENGTH,
     ) -> None:
-        """
-        Contract:
-        - 클라이언트 검증 규칙의 기준값을 보관한다.
-        """
+        """제목과 내용의 공통 길이 제한 값을 보관한다."""
         self.title_max_length = title_max_length
         self.content_max_length = content_max_length
 
     def get_rules(self) -> ClientValidationRules:
-        """
-        Spec 4:
-        - 클라이언트가 사용할 검증 규칙 DTO 반환
-        - title/content 필수 여부와 최대 길이를 포함
-        """
+        """작성 폼에서 사용하는 전체 검증 규칙 객체를 반환한다."""
         return ClientValidationRules(
             title_required=True,
             content_required=True,
@@ -60,11 +49,7 @@ class NoteFormSpec:
         )
 
     def get_error_messages(self) -> dict[ErrorCode, str]:
-        """
-        Spec 4:
-        - 클라이언트 화면에 보여줄 에러 메시지 집합 반환
-        - 예: title required, content required, too long 등
-        """
+        """브라우저에서 표시할 사람이 읽기 쉬운 오류 메시지를 반환한다."""
         return {
             ErrorCode.TITLE_REQUIRED: "Title is required.",
             ErrorCode.CONTENT_REQUIRED: "Content is required.",
@@ -73,6 +58,7 @@ class NoteFormSpec:
         }
 
     def get_field_rules(self) -> list[ClientValidationFieldRule]:
+        """클라이언트 JavaScript 검증에 사용할 필드별 규칙 객체를 반환한다."""
         max_length_by_field_name = {
             TITLE_FIELD_NAME: self.title_max_length,
             CONTENT_FIELD_NAME: self.content_max_length,

@@ -1,3 +1,5 @@
+"""노트 생성, 검증, 조회를 담당하는 비즈니스 로직."""
+
 from typing import Optional
 
 from .note_models import (
@@ -9,25 +11,9 @@ from .note_models import (
     ValidationResult,
 )
 
-# 비즈니스 로직의 중심
-
-# 이 기능이 비즈니스 규칙상 맞는지 판단하고 처리
-# 예시
-# 제목이 비어 있으면 invalid
-# 내용이 너무 길면 invalid
-# 유효하면 새 노트 생성
-# 없는 id면 None 반환
-
 
 class NoteService:
-    """
-    TADD Step 1용 서비스 레이어 계약.
-
-    역할:
-    - 노트 목록/상세 조회
-    - 서버 측 입력 검증
-    - 노트 생성
-    """
+    """in-memory 노트 저장소와 입력 검증 규칙을 제공한다."""
 
     def __init__(
         self,
@@ -35,31 +21,17 @@ class NoteService:
         title_max_length: int = DEFAULT_NOTE_TITLE_MAX_LENGTH,
         content_max_length: int = DEFAULT_NOTE_CONTENT_MAX_LENGTH,
     ) -> None:
-        """
-        Contract:
-        - 초기 노트 목록을 주입받을 수 있다.
-        - 서버/클라이언트가 공유할 길이 제한을 보관한다.
-        - 지금 단계에서는 in-memory 저장소를 전제로 설계한다.
-        """
+        """초기 노트와 검증 설정을 받아 서비스를 초기화한다."""
         self._notes = list(initial_notes) if initial_notes is not None else []
         self._title_max_length = title_max_length
         self._content_max_length = content_max_length
 
     def list_notes(self) -> list[Note]:
-        """
-        Supporting Contract:
-        - GET /notes 에서 사용할 전체 노트 목록 반환
-        - 반환 타입은 list[Note]
-        """
+        """전체 노트 목록의 복사본을 반환한다."""
         return list(self._notes)
 
     def get_note_by_id(self, note_id: int) -> Optional[Note]:
-        """
-        Spec 3:
-        - note_id가 존재하면 해당 Note 반환
-        - 존재하지 않으면 None 반환
-        - 웹 레이어에서 None을 404로 매핑한다
-        """
+        """ID에 해당하는 노트를 반환하고, 없으면 ``None`` 을 반환한다."""
         for note in self._notes:
             if note.id == note_id:
                 return note
@@ -70,15 +42,7 @@ class NoteService:
         title: Optional[str],
         content: Optional[str],
     ) -> ValidationResult:
-        """
-        Spec 1:
-        - title은 필수
-        - content는 필수
-        - 공백만 있는 입력은 허용하지 않음
-        - title 최대 길이: 50
-        - content 최대 길이: 200
-        - 반환값은 ValidationResult
-        """
+        """필수 입력 여부와 길이 제한 규칙에 따라 노트 입력값을 검증한다."""
         errors: list[ErrorCode] = []
 
         if title is None or title.strip() == "":
@@ -94,13 +58,7 @@ class NoteService:
         return ValidationResult(is_valid=not errors, errors=errors)
 
     def create_note(self, request: NoteCreateRequest) -> Note:
-        """
-        Spec 2:
-        - NoteCreateRequest를 받아 새 Note 생성
-        - 생성 전 validate_note_input(...) 규칙을 만족해야 함
-        - 성공 시 생성된 Note 반환
-        - 실패 처리(400 응답 등)는 웹 레이어 테스트에서 다룬다
-        """
+        """검증이 통과한 요청으로 새 노트를 생성하고 저장한다."""
         validation_result = self.validate_note_input(request.title, request.content)
         if not validation_result.is_valid:
             raise ValueError("Invalid note input")
