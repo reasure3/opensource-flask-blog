@@ -1,3 +1,5 @@
+"""노트 관련 Flask 라우트를 담당하는 HTTP 컨트롤러 계층."""
+
 from typing import Any
 
 from flask import Flask, Response, jsonify, render_template_string, request
@@ -5,8 +7,6 @@ from flask import Flask, Response, jsonify, render_template_string, request
 from client_validation import NoteFormSpec
 from .note_models import NoteCreateRequest
 from .note_service import NoteService
-
-# Web layer (HTTP interface)
 
 WRITE_NOTE_TEMPLATE = """
 <!doctype html>
@@ -17,6 +17,7 @@ WRITE_NOTE_TEMPLATE = """
   </head>
   <body>
     <h1>Write Note</h1>
+    <p>브라우저에서 먼저 입력값을 검증한 뒤, in-memory 저장소에 노트를 생성합니다.</p>
 
     <form id="note-form">
       <div>
@@ -109,87 +110,132 @@ WRITE_NOTE_TEMPLATE = """
 
 
 class NoteController:
-    """
-    Web layer contract class.
-
-    Responsibilities:
-    - Register Flask routes
-    - Define HTTP request/response shapes
-    - Map service results to status codes and JSON/page responses
-    """
+    """Flask HTTP 계층과 노트 서비스 계층을 연결한다."""
 
     def __init__(self, note_service: NoteService, form_spec: NoteFormSpec) -> None:
-        """
-        Contract:
-        - Delegate business logic to NoteService
-        - Read client validation rules from NoteFormSpec
-        """
+        """노트 서비스와 폼 명세 객체를 주입받아 보관한다."""
         self.note_service = note_service
         self.form_spec = form_spec
 
     def register_routes(self, app: Flask) -> None:
-        """
-        Contract:
-        Register public routes on the Flask app.
-
-        Routes:
-        - GET /notes
-        - GET /notes/<int:note_id>
-        - GET /write
-        - POST /api/notes
-        """
+        """노트 관련 공개 라우트를 Flask 앱에 등록한다."""
 
         @app.get("/notes")
         def list_notes_route():
+            """
+            전체 노트 목록을 조회한다.
+            ---
+            tags:
+              - 노트
+            summary: 전체 노트 조회
+            responses:
+              200:
+                description: 노트 목록을 JSON 배열로 반환
+                content:
+                  application/json:
+                    schema:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/Note'
+            """
             return self.list_notes()
 
         @app.get("/notes/<int:note_id>")
         def get_note_detail_route(note_id: int):
+            """
+            ID로 특정 노트를 조회한다.
+            ---
+            tags:
+              - 노트
+            summary: 노트 상세 조회
+            parameters:
+              - in: path
+                name: note_id
+                required: true
+                schema:
+                  type: integer
+                description: 조회할 노트의 숫자 ID
+            responses:
+              200:
+                description: 요청한 노트 정보
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/Note'
+              404:
+                description: 해당 노트를 찾을 수 없음
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/ErrorResponse'
+            """
             return self.get_note_detail(note_id)
 
         @app.get("/write")
         def show_write_page_route():
+            """
+            노트 작성 페이지를 렌더링한다.
+            ---
+            tags:
+              - 노트
+            summary: 노트 작성 페이지 조회
+            responses:
+              200:
+                description: 클라이언트 검증 규칙이 포함된 HTML 폼 반환
+                content:
+                  text/html:
+                    schema:
+                      type: string
+            """
             return self.show_write_page()
 
         @app.post("/api/notes")
         def create_note_route():
+            """
+            새 노트를 생성한다.
+            ---
+            tags:
+              - 노트
+            summary: JSON 입력으로 노트 생성
+            requestBody:
+              required: true
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/NoteCreateRequest'
+            responses:
+              201:
+                description: 생성된 노트 반환
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/Note'
+              400:
+                description: 입력 검증 실패
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/ValidationErrorResponse'
+            """
             return self.create_note()
 
     def list_notes(self) -> tuple[Response, int]:
-        """
-        Supporting Contract:
-        - GET /notes
-        - 200 OK
-        - Return the note list as JSON
-        """
-        return jsonify(
-            [
-                note.to_dict()
-                for note in self.note_service.list_notes()
-            ]
-        ), 200
+        """전체 노트 컬렉션을 JSON 응답으로 반환한다."""
+        return jsonify([note.to_dict() for note in self.note_service.list_notes()]), 200
 
     def get_note_detail(self, note_id: int) -> tuple[Response, int]:
-        """
-        Spec 3:
-        - Existing note_id -> 200 + note JSON
-        - Missing note_id -> 404 + error JSON
-        """
+        """노트가 존재하면 반환하고, 없으면 404 오류 JSON을 반환한다."""
         note = self.note_service.get_note_by_id(note_id)
         if note is None:
             return jsonify({"error": "Note not found"}), 404
         return jsonify(note.to_dict()), 200
 
     def show_write_page(self) -> str:
-        """
-        Spec 4:
-        - GET /write
-        - Return the note write page
-        - Inject client-side validation rules into the page
-        """
+        """수동 노트 작성과 브라우저 검증에 사용하는 HTML 페이지를 렌더링한다."""
         return render_template_string(WRITE_NOTE_TEMPLATE, **self._get_write_page_context())
 
     def _get_write_page_context(self) -> dict[str, Any]:
+        """작성 폼에 주입할 JSON 안전 형태의 검증 설정을 구성한다."""
         rules = self.form_spec.get_rules()
         return {
             "rules": rules.__dict__,
@@ -210,13 +256,7 @@ class NoteController:
         }
 
     def create_note(self) -> tuple[Response, int]:
-        """
-        Spec 2:
-        - POST /api/notes
-        - request JSON: { "title": ..., "content": ... }
-        - Valid input -> 201 + created note JSON
-        - Invalid input -> 400 + errors JSON
-        """
+        """요청 JSON을 검증한 뒤 노트를 생성하고 실패 시 HTTP 400으로 변환한다."""
         payload = request.get_json(silent=True) or {}
         title = payload.get("title")
         content = payload.get("content")
